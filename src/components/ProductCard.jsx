@@ -1,64 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ProductCard = ({ product, onAddToCart }) => {
-  const [quantity, setQuantity] = useState(1);
   const [isAdded, setIsAdded] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const navigate = useNavigate();
 
-  const handleIncrement = () => {
-    setQuantity(prevQuantity => prevQuantity + 1); // Inc qty
-  };
-
-  const handleDecrement = () => {
-    setQuantity(prevQuantity => (prevQuantity > 1 ? prevQuantity - 1 : 1)); // Dec qty
-  };
+  useEffect(() => {
+    const savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    const productInCart = savedCartItems.some(item => item.product.id === product.id);
+    setIsAdded(productInCart);
+  }, [product.id]);
 
   const handleAddToCart = () => {
-    setIsAdded(true); // Show quantity controls when first added
-    onAddToCart(product, quantity); // Add to cart with the current quantity
-    setQuantity(1); // Reset quantity to 1 after adding to cart
+    const savedCartItems = JSON.parse(localStorage.getItem('cartItems')) || [];
+    const updatedItems = savedCartItems.some(item => item.product.id === product.id)
+      ? savedCartItems.map(item =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        )
+      : [...savedCartItems, { product, quantity }];
+
+    localStorage.setItem('cartItems', JSON.stringify(updatedItems));
+    onAddToCart(product, quantity);
+    setIsAdded(true);
+  };
+
+  const handleGoToCart = () => {
+    navigate('/cart');
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 text-center relative">
+    <div className="bg-[#242526] text-white rounded-lg shadow-md p-6 text-center relative hover:shadow-[#595c5e]">
       <img
         src={product.image}
         alt={product.name}
-        className="w-full h-40 object-cover rounded-md"
+        className="h-40 object-cover mx-auto rounded-md"
       />
       <h2 className="text-xl font-semibold mt-4">{product.name}</h2>
       <p className="text-lg text-blue-500 mt-2">Rs. {product.price * 80}</p>
-      <p className="text-gray-600 mt-4">{product.description}</p>
+      <p className="mt-4">{product.description}</p>
 
-    {isAdded ? 
-      (
-        <div className="flex items-center justify-center mt-4">
-          <button
-            onClick={handleDecrement}
-            className="bg-gray-200 text-black px-2 py-1 rounded-md"
-          >
-            -
-          </button>
-          <span className="mx-4 text-lg">{quantity}</span>
-          <button
-            onClick={handleIncrement}
-            className="bg-gray-200 text-black px-2 py-1 rounded-md"
-          >
-            +
-          </button>
-        </div>
-      )  
-
-      :
-
-      (
+      {!isAdded ? (
         <button
           onClick={handleAddToCart}
-          className="mt-6 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+          className="mt-6 py-2 px-4 rounded-md bg-blue-500 hover:bg-blue-600 text-white"
         >
           Add to Cart
         </button>
-      )
-    }
+      ) : (
+        <button
+          onClick={handleGoToCart}
+          className="mt-6 py-2 px-4 rounded-md bg-yellow-500 hover:bg-yellow-600 text-white"
+        >
+          Added Go to Cart
+        </button>
+      )}
     </div>
   );
 };
